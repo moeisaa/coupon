@@ -52,7 +52,6 @@ $default_keys = [
 
 include('sidebar.php');
 ?>
-
 <style>
 .translation-container {
     padding: 15px;
@@ -93,8 +92,58 @@ include('sidebar.php');
         margin-bottom: 8px;
     }
 }
-</style>
 
+.translation-input {
+    transition: all 0.3s ease;
+    border: 2px solid #FFD700; /* Default yellow border */
+}
+
+.translation-input.modified {
+    border-color: #4CAF50 !important; /* Green border when modified */
+}
+</style>
+<style>
+.translation-container {
+    padding: 15px;
+    transition: all 0.3s ease;
+}
+
+@media (min-width: 769px) {
+    .translation-container {
+        margin-left: 280px; /* Sidebar width */
+    }
+}
+
+@media (max-width: 768px) {
+    .translation-container {
+        margin-left: 0;
+        padding: 10px;
+    }
+
+    
+    .table-block tr {
+        display: block;
+        margin-bottom: 1rem;
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
+    .table-block td {
+        display: block;
+        border: none;
+    }
+    
+    .table-block td:first-child {
+        font-weight: bold;
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        margin-bottom: 8px;
+    }
+}
+</style>
 <div class="translation-container">
    <h2 class="mb-4">Edit Translations - <?php echo htmlspecialchars($language['name']); ?></h2>
    
@@ -116,10 +165,10 @@ include('sidebar.php');
                                <td>
                                    <input type="text" 
                                        name="translations[<?php echo htmlspecialchars($key); ?>]" 
-                                       class="form-control"
-                                       value="<?php echo htmlspecialchars($translations[$key] ?? ''); ?>"
+                                       class="form-control translation-input"
+                                       value="<?php echo htmlspecialchars($translations[$key] ?? $default_value); ?>"
+                                       data-default="<?php echo htmlspecialchars($translations[$key] ?? $default_value); ?>"
                                        dir="<?php echo $language['direction']; ?>"
-                                       placeholder="<?php echo htmlspecialchars($default_value); ?>"
                                        required>
                                </td>
                            </tr>
@@ -132,3 +181,22 @@ include('sidebar.php');
        </div>
    </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('.translation-input');
+    
+    inputs.forEach(input => {
+        // Store the initial value
+        const defaultValue = input.getAttribute('data-default');
+        
+        // Add input event listener
+        input.addEventListener('input', function() {
+            if (this.value !== defaultValue) {
+                this.classList.add('modified');
+            } else {
+                this.classList.remove('modified');
+            }
+        });
+    });
+});
+</script>
