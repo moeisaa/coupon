@@ -1,6 +1,6 @@
 <?php
 include('db_connect.php');
-
+//  Hello Test Commit
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);
     $query = "SELECT * FROM pages WHERE id = ?";
