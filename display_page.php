@@ -1313,7 +1313,7 @@ echo "
                 <div class='flex justify-between items-center h-16'>
                     <!-- Logo/Site Name -->
                     <a href='#' class='text-2xl font-bold text-blue-600 hover:text-blue-700'>
-                        <img src='" . htmlspecialchars($site_logo_path) . "' alt='" . htmlspecialchars($store_name) . "' class='h-8 w-auto'>
+                        <img src='" . htmlspecialchars($site_logo_path) . "' alt='" . htmlspecialchars($store_name) . "' class='h-12 w-auto'>
                     </a>
                     
                     <!-- Desktop Menu -->
@@ -1733,6 +1733,101 @@ echo "
         </div>
     </div>
 </div>
+<footer class='mt-16'>
+    <!-- Top Wave Decoration -->
+    <div class='w-full overflow-hidden rotate-180'>
+        <svg data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none' style='fill: {$selected_colors['light']}'>
+            <path d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z'></path>
+        </svg>
+    </div>
+
+    <!-- Main Footer Content -->
+    <div style='background-color: {$selected_colors['light']}'>
+        <div class='max-w-6xl mx-auto px-4 sm:px-10 py-12'>
+            <!-- Logo and Links Section -->
+            <div class='flex flex-col md:flex-row items-center justify-between gap-8 mb-10'>
+                <!-- Logo -->
+                <div class='flex-shrink-0 mb-6 md:mb-0'>
+                    <img src='" . htmlspecialchars($site_logo_path) . "' alt='Logo' class='h-12 hover:opacity-80 transition-opacity'>
+                </div>
+                
+                <!-- Footer Links -->
+                <div class='flex flex-wrap justify-center gap-x-8 gap-y-4'>";
+                
+                // Process footer links
+                $footer_links_json = stripslashes($page['footer_links']);
+                $footer_links_json = str_replace('\\/', '/', $footer_links_json);
+                $footer_links = json_decode($footer_links_json, true);
+
+                if ($footer_links && is_array($footer_links)) {
+                    foreach ($footer_links as $link) {
+                        if (!empty($link['text']) && !empty($link['url'])) {
+                            echo "<a href='" . htmlspecialchars($link['url']) . "' 
+                                    class='relative font-medium text-sm group hover:opacity-75 transition-all' 
+                                    style='color: {$selected_colors['primary']}' 
+                                    target='_blank'>
+                                    <span class='relative z-10'>" . htmlspecialchars($link['text']) . "</span>
+                                    <div class='absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full' 
+                                         style='background-color: {$selected_colors['primary']}'></div>
+                                 </a>";
+                        }
+                    }
+                }
+
+                echo "</div>
+            </div>
+
+<!-- Footer Note -->
+<div class='text-center mb-10 max-w-3xl mx-auto'>
+    <p class='text-gray-600 text-sm leading-relaxed'>" . 
+    // Get and display the footer note from the database
+    (!empty($page['footer_note']) ? htmlspecialchars($page['footer_note']) : 'dwadawdawdwadaw') . 
+    "</p>
+</div>
+
+            <!-- Divider -->
+            <div class='w-full h-px bg-opacity-20 mb-8' style='background-color: {$selected_colors['primary']}'></div>
+
+            <!-- Copyright -->
+            <div class='text-center'>
+                <p class='text-sm' style='color: {$selected_colors['primary']}'>" . 
+                (!empty($page['copyright_text']) ? htmlspecialchars($page['copyright_text']) : htmlspecialchars($translations['copyright'])) . 
+                "</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Wave Decoration -->
+    <div class='w-full overflow-hidden'>
+        <svg data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none' style='fill: {$selected_colors['light']}'>
+            <path d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z'></path>
+        </svg>
+    </div>
+</footer>
+
+<style>
+    /* SVG Wave Styling */
+    svg[data-name='Layer 1'] {
+        width: 100%;
+        height: 50px;
+    }
+
+    /* RTL Support */
+    html[dir='rtl'] .footer-links {
+        text-align: right;
+    }
+
+    @media (max-width: 768px) {
+        svg[data-name='Layer 1'] {
+            height: 30px;
+        }
+    }
+
+    /* Smooth transitions */
+    .footer a {
+        transition: all 0.3s ease;
+    }
+</style>
 
 <script>
 let shareData = {};

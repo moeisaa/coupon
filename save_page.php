@@ -12,7 +12,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $default_coupon_url = $conn->real_escape_string($_POST['default_coupon_url']);
     $text_direction = $conn->real_escape_string($_POST['text_direction']);
     $language_id = isset($_POST['language_id']) ? intval($_POST['language_id']) : null;
-    
+
+    $footer_links = [];
+if (isset($_POST['footer_links'])) {
+    foreach ($_POST['footer_links'] as $link) {
+        if (!empty($link['text']) && !empty($link['url'])) {
+            $footer_links[] = [
+                'text' => htmlspecialchars($link['text']),
+                'url' => htmlspecialchars($link['url'])
+            ];
+        }
+    }
+}
+$footer_links_json = $conn->real_escape_string(json_encode($footer_links));
+$footer_note = $conn->real_escape_string($_POST['footer_note'] ?? '');
+
+// Process copyright text
+$copyright_text = $conn->real_escape_string($_POST['copyright_text'] ?? '');
+
+
+
 // Clean and preserve HTML formatting for blog content
 $allowedTags = [
     'div', 'span', 'p', 'br', 'strong', 'em', 'u', 'strike', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -78,14 +97,15 @@ $blog = preg_replace_callback(
     $custom_color = $conn->real_escape_string($_POST['custom_color'] ?? null);
     
     $sql = "INSERT INTO pages (route, rating, votes, header, description, blog, store_name, 
-    default_coupon_url, text_direction, theme, theme_color, custom_color, language_id"
+    default_coupon_url, text_direction, theme, theme_color, custom_color, language_id, 
+    footer_links, footer_note, copyright_text"
     . ($logo ? ", logo" : "") . ") 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
     . ($logo ? ", ?" : "") . ")";
     
     $stmt = $conn->prepare($sql);
 
-    $types = "siisssssssssi"; // Add 'i' for language_id
+    $types = "siissssssssissss"; // Note: Added 's' for footer_note
     if ($logo) {
         $types .= "s";
     }
@@ -93,12 +113,15 @@ $blog = preg_replace_callback(
     if ($logo) {
         $stmt->bind_param($types, $route, $rating, $votes, $header, $description, $blog, 
                           $store_name, $default_coupon_url, $text_direction, $theme, 
-                          $theme_color, $custom_color, $language_id, $logo);
+                          $theme_color, $custom_color, $language_id, $footer_links_json, 
+                          $footer_note, $copyright_text, $logo);
     } else {
         $stmt->bind_param($types, $route, $rating, $votes, $header, $description, $blog,
                           $store_name, $default_coupon_url, $text_direction, $theme,
-                          $theme_color, $custom_color, $language_id);
+                          $theme_color, $custom_color, $language_id, $footer_links_json,
+                          $footer_note, $copyright_text);
     }
+    
     
     if ($stmt->execute()) {
         $id = $conn->insert_id;

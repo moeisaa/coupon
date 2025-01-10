@@ -548,7 +548,125 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+
+<!-- Footer Setting  -->
+<div class="section-title">Footer Settings</div>
+
+<div class="form-group">
+    <label for="footer_links">Footer Links:</label>
+    <div id="footer-links-container">
+        <div class="footer-link-group mb-3">
+            <div class="row">
+                <div class="col-md-5">
+                    <input type="text" name="footer_links[0][text]" class="form-control mb-2" placeholder="Link Text">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="footer_links[0][url]" class="form-control mb-2" placeholder="Link URL">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger remove-link" style="display: none;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button type="button" class="btn btn-secondary mt-2" id="add-footer-link">
+        <i class="fas fa-plus me-2"></i>Add Footer Link
+    </button>
+</div>
+
+<div class="form-group">
+    <label for="copyright_text">Copyright Text:</label>
+    <input type="text" id="copyright_text" name="copyright_text" placeholder="Enter copyright text" class="form-control">
+</div>
+<div class="form-group">
+    <label for="footer_note">Footer Note:</label>
+    <textarea id="footer_note" name="footer_note" placeholder="Enter footer note" class="form-control" rows="3"></textarea>
+</div>
+<style>
+
+.footer-note {
+    padding: 1rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 1rem 0;
+}
+.footer-link-group {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.remove-link {
+    padding: 0.375rem 0.75rem;
+}
+
+#add-footer-link {
+    background: var(--secondary-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+#add-footer-link:hover {
+    background: var(--border-color);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('footer-links-container');
+    const addButton = document.getElementById('add-footer-link');
+    let linkCount = 1;
+
+    addButton.addEventListener('click', function() {
+        const newGroup = document.createElement('div');
+        newGroup.className = 'footer-link-group mb-3';
+        newGroup.innerHTML = `
+            <div class="row">
+                <div class="col-md-5">
+                    <input type="text" name="footer_links[${linkCount}][text]" class="form-control mb-2" placeholder="Link Text">
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="footer_links[${linkCount}][url]" class="form-control mb-2" placeholder="Link URL">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger remove-link">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.appendChild(newGroup);
+        linkCount++;
+
+        // Show all remove buttons when there's more than one link
+        const removeButtons = document.querySelectorAll('.remove-link');
+        removeButtons.forEach(button => button.style.display = 'block');
+    });
+
+    container.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-link')) {
+            const group = e.target.closest('.footer-link-group');
+            group.remove();
+
+            // Hide the remove button if only one link remains
+            const removeButtons = document.querySelectorAll('.remove-link');
+            if (removeButtons.length === 1) {
+                removeButtons[0].style.display = 'none';
+            }
+        }
+    });
+});
+</script>
                 <div class="text-center mt-4">
+
                     <button type="submit" class="submit-btn">
                         <i class="fas fa-plus-circle me-2"></i>
                         Create Page

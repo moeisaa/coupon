@@ -48,6 +48,28 @@ $blog = preg_replace_callback(
     $blog
 );
 
+
+
+
+// Process footer links
+$footer_links = [];
+if (isset($_POST['footer_links'])) {
+    foreach ($_POST['footer_links'] as $link) {
+        if (!empty($link['text']) && !empty($link['url'])) {
+            $footer_links[] = [
+                'text' => strip_tags($link['text']),
+                'url' => strip_tags($link['url'])
+            ];
+        }
+    }
+}
+$footer_links_json = $conn->real_escape_string(json_encode($footer_links));
+$footer_note = $conn->real_escape_string($_POST['footer_note'] ?? '');
+$copyright_text = $conn->real_escape_string($_POST['copyright_text'] ?? '');
+
+
+
+
 $store_name = isset($_POST['store_name']) ? $conn->real_escape_string($_POST['store_name']) : $page['store_name'];
 $default_coupon_url = isset($_POST['default_coupon_url']) ? $conn->real_escape_string($_POST['default_coupon_url']) : $page['default_coupon_url'];
 $text_direction = isset($_POST['text_direction']) ? $conn->real_escape_string($_POST['text_direction']) : $page['text_direction'];
@@ -103,7 +125,10 @@ $sql = "UPDATE pages SET
     theme = ?,
     theme_color = ?,
     custom_color = ?,
-    language_id = ?
+    language_id = ?,
+    footer_links = ?,
+    footer_note = ?,
+    copyright_text = ?
 WHERE id = ?";
 
 $stmt = $conn->prepare($sql);
@@ -111,10 +136,11 @@ if (!$stmt) {
     die("Error preparing statement: " . $conn->error);
 }
 
-if(!$stmt->bind_param('siissssssssssis', 
-    $route, $rating, $votes, $header, $description, $blog, 
-    $logo, $store_name, $default_coupon_url, $text_direction,
-    $theme, $theme_color, $custom_color, $language_id, $id)) {
+if(!$stmt->bind_param('siissssssssssisssi', 
+$route, $rating, $votes, $header, $description, $blog, 
+$logo, $store_name, $default_coupon_url, $text_direction,
+$theme, $theme_color, $custom_color, $language_id, 
+$footer_links_json, $footer_note, $copyright_text, $id)) {
     die("Error binding parameters: " . $stmt->error);
 }
 
