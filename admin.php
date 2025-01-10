@@ -258,6 +258,7 @@ if ($usageResult) {
                                 <th>Route</th>
                                 <th>Store Name</th>
                                 <th>Created At</th>
+                                <th>Tag</th>  <!-- New column -->
                                 <th>Page Coupons</th>
                                 <th>Actions</th>
                             </tr>
@@ -273,29 +274,40 @@ if ($usageResult) {
                                     $route = htmlspecialchars($row['route']);
                                     $storeName = htmlspecialchars($row['store_name']);
                                     $createdAt = htmlspecialchars($row['created_at']);
+                                    $tag = htmlspecialchars($row['tag'] ?? '');
                                     $fullUrl = $env['DOMAIN']."/".$route;
-
-                                           echo "<tr>
-                                            <td><a href='" . $fullUrl . "' class='route-link'>" . $route . "</a></td>
-                                            <td>" . $storeName . "</td>
-                                            <td>" . $createdAt . "</td>
-                                            <td>
-    <a href='dashboard.php?page_id=$pageId' class='btn position-relative' title='Manage Coupons'>
-        <i class='fas fa-tags' style='color: #4a90e2; font-size: 1.2em;'></i>
-        <span class='position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary' style='font-size: 0.7em;'>
-            <i class='fas fa-plus'></i>
-        </span>
-    </a>
-</td>
-                                            <td class='action-btns'>
-                                                <a href='edit_page.php?id=$pageId' class='btn edit-btn'>
+                                
+                                    echo "<tr>
+                                        <td><a href='" . $fullUrl . "' class='route-link'>" . $route . "</a></td>
+                                        <td>" . $storeName . "</td>
+                                        <td>" . $createdAt . "</td>
+                                        <td>
+                                            <div class='tag-container'>
+                                                <span class='page-tag' style='background-color: #e9ecef; padding: 2px 8px; border-radius: 12px; font-size: 0.85em;'>" 
+                                                    . ($tag ?: 'No tag') . 
+                                                "</span>
+                                                <button class='btn btn-sm edit-tag-btn' data-page-id='" . $pageId . "' data-current-tag='" . $tag . "'>
                                                     <i class='fas fa-edit'></i>
-                                                </a>
-                                                <a href='delete_page.php?id=$pageId' class='btn delete-btn' onclick='return confirm(\"Are you sure?\")'>
-                                                    <i class='fas fa-trash'></i>
-                                                </a>
-                                            </td>
-                                        </tr>";
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href='dashboard.php?page_id=$pageId' class='btn position-relative' title='Manage Coupons'>
+                                                <i class='fas fa-tags' style='color: #4a90e2; font-size: 1.2em;'></i>
+                                                <span class='position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary' style='font-size: 0.7em;'>
+                                                    <i class='fas fa-plus'></i>
+                                                </span>
+                                            </a>
+                                        </td>
+                                        <td class='action-btns'>
+                                            <a href='edit_page.php?id=$pageId' class='btn edit-btn'>
+                                                <i class='fas fa-edit'></i>
+                                            </a>
+                                            <a href='delete_page.php?id=$pageId' class='btn delete-btn' onclick='return confirm(\"Are you sure?\")'>
+                                                <i class='fas fa-trash'></i>
+                                            </a>
+                                        </td>
+                                    </tr>";
                                 }
                             }
                             ?>
@@ -507,6 +519,52 @@ new Chart(ctx4, {
             }
         }
     }
+});
+</script>
+
+<script>document.addEventListener('DOMContentLoaded', function() {
+    // Handle tag editing
+    document.querySelectorAll('.edit-tag-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const pageId = this.dataset.pageId;
+            const currentTag = this.dataset.currentTag;
+            const newTag = prompt('Enter new tag:', currentTag);
+            
+            if (newTag !== null) {
+                // Send AJAX request to update tag
+                fetch('update_tag.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `page_id=${encodeURIComponent(pageId)}&tag=${encodeURIComponent(newTag)}`
+                })
+                .then(async response => {
+                    try {
+                        const data = await response.json();
+                        if (data.success) {
+                            // Update the tag display
+                            const tagSpan = this.parentElement.querySelector('.page-tag');
+                            tagSpan.textContent = newTag || 'No tag';
+                            this.dataset.currentTag = newTag;
+                            location.reload(); // Refresh the page to update all instances
+                        } else {
+                            console.error('Server error:', data.message);
+                        }
+                    } catch (e) {
+                        console.error('JSON parsing error:', e);
+                        // Still update the UI if the database update was successful
+                        const tagSpan = this.parentElement.querySelector('.page-tag');
+                        tagSpan.textContent = newTag || 'No tag';
+                        this.dataset.currentTag = newTag;
+                    }
+                })
+                .catch(error => {
+                    console.error('Network error:', error);
+                });
+            }
+        });
+    });
 });
 </script>
     </body>
