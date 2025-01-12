@@ -25,8 +25,23 @@ function deleteRelatedFiles($filename, $directory) {
     }
 }
 
+// Delete orphaned coupons (coupons without a valid page)
+$orphaned_deleted = false;
+$delete_orphaned_query = "DELETE c FROM coupons c 
+                         LEFT JOIN pages p ON c.page_id = p.id 
+                         WHERE p.id IS NULL";
+$orphaned_stmt = $conn->prepare($delete_orphaned_query);
+if ($orphaned_stmt->execute()) {
+    $orphaned_count = $orphaned_stmt->affected_rows;
+    if ($orphaned_count > 0) {
+        $orphaned_deleted = true;
+    }
+}
+$orphaned_stmt->close();
+
 // Safely delete HTML files and related files in static_pages directory
 $static_pages_dir = 'static_pages';
+$files_deleted = false;
 
 // Check if directory exists
 if (!is_dir($static_pages_dir)) {
@@ -43,7 +58,9 @@ if (!is_dir($static_pages_dir)) {
         // If it's an HTML file
         if (pathinfo($file, PATHINFO_EXTENSION) === 'html') {
             // Delete the HTML file
-            @unlink($static_pages_dir . '/' . $file);
+            if (@unlink($static_pages_dir . '/' . $file)) {
+                $files_deleted = true;
+            }
             
             // Delete related files
             deleteRelatedFiles(pathinfo($file, PATHINFO_FILENAME), $static_pages_dir);
@@ -222,12 +239,18 @@ $conn->close();
 </head>
 <body>
     <div class="confirmation-container">
-        <?php if ($coupons_extended): ?>
+        <?php if ($coupons_extended || $orphaned_deleted || $files_deleted): ?>
             <div class="status-icon success-icon">
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="status-message text-success">
-                Coupons have been successfully extended and files cleaned up!
+                <?php 
+                $messages = [];
+                if ($coupons_extended) $messages[] = "Coupons have been successfully extended";
+                if ($orphaned_deleted) $messages[] = "Orphaned coupons have been removed";
+                if ($files_deleted) $messages[] = "Files cleaned up";
+                echo implode(", ", $messages) . "!";
+                ?>
             </div>
         <?php elseif (!empty($error_message)): ?>
             <div class="status-icon error-icon">
