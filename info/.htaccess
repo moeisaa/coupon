@@ -1,0 +1,30 @@
+# Enable the rewrite engine
+RewriteEngine On
+
+# If the requested file or directory doesn't exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# If the request doesn't already end in .php
+RewriteCond %{REQUEST_FILENAME}.php -f
+
+# Rewrite the URL to append .php
+RewriteRule ^([^\.]+)$ $1.php [NC,L]
+
+# Prevent directory listing
+Options -Indexes
+
+# Handle 404 errors
+ErrorDocument 404 /404.php
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# Set default index page
+DirectoryIndex index.php
+
+# Protect the file from viewing
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>

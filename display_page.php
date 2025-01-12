@@ -1733,16 +1733,16 @@ echo "
         </div>
     </div>
 </div>
-<footer class='mt-16'>
+<footer class='mt-16' >
     <!-- Top Wave Decoration -->
-    <div class='w-full overflow-hidden rotate-180'>
-        <svg data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none' style='fill: {$selected_colors['light']}'>
+    <div class='w-full overflow-hidden rotate-180 'style='line-height: 0 ; padding-bottom:10px;'>
+        <svg class='Top-footer' data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 110' preserveAspectRatio='none' >
             <path d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z'></path>
         </svg>
     </div>
 
     <!-- Main Footer Content -->
-    <div style='background-color: {$selected_colors['light']}'>
+<div class='footer-background'>
         <div class='max-w-6xl mx-auto px-4 sm:px-10 py-12'>
             <!-- Logo and Links Section -->
             <div class='flex flex-col md:flex-row items-center justify-between gap-8 mb-10'>
@@ -1751,55 +1751,90 @@ echo "
                     <img src='" . htmlspecialchars($site_logo_path) . "' alt='Logo' class='h-12 hover:opacity-80 transition-opacity'>
                 </div>
                 
-                <!-- Footer Links -->
-                <div class='flex flex-wrap justify-center gap-x-8 gap-y-4'>";
-                
-                // Process footer links
-                $footer_links_json = stripslashes($page['footer_links']);
-                $footer_links_json = str_replace('\\/', '/', $footer_links_json);
-                $footer_links = json_decode($footer_links_json, true);
+    <!-- Footer Links -->
+<div class='flex flex-wrap justify-center gap-x-8 gap-y-4'>";
+    
+    // Get footer data
+    $footer_data = null;
+    if ($page['footer_id']) {
+        $footer_query = "SELECT * FROM footers WHERE id = {$page['footer_id']}";
+        $footer_result = $conn->query($footer_query);
+        $footer_data = $footer_result->fetch_assoc();
+    }
 
-                if ($footer_links && is_array($footer_links)) {
-                    foreach ($footer_links as $link) {
-                        if (!empty($link['text']) && !empty($link['url'])) {
-                            echo "<a href='" . htmlspecialchars($link['url']) . "' 
-                                    class='relative font-medium text-sm group hover:opacity-75 transition-all' 
-                                    style='color: {$selected_colors['primary']}' 
-                                    target='_blank'>
-                                    <span class='relative z-10'>" . htmlspecialchars($link['text']) . "</span>
-                                    <div class='absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-300 group-hover:w-full' 
-                                         style='background-color: {$selected_colors['primary']}'></div>
-                                 </a>";
-                        }
-                    }
+    // If no specific footer or not found, get default footer
+    if (!$footer_data) {
+        $default_footer_query = "SELECT * FROM footers WHERE is_default = 1 LIMIT 1";
+        $default_footer_result = $conn->query($default_footer_query);
+        $footer_data = $default_footer_result->fetch_assoc();
+    }
+
+    // Process footer links
+    if ($footer_data && !empty($footer_data['footer_links'])) {
+        $footer_links = json_decode($footer_data['footer_links'], true);
+        if (is_array($footer_links)) {
+            foreach ($footer_links as $link) {
+                if (!empty($link['text']) && !empty($link['url'])) {
+                    echo "<a href='" . htmlspecialchars($link['url']) . "' 
+                            class='relative group px-4 py-2 rounded-lg transition-all duration-300 hover:bg-[".$selected_colors["primary"]."]' 
+                            target='_blank'>
+                            <span class='text-gray-300 group-hover:text-white text-[18px] font-medium tracking-wide transition-colors duration-300'>" 
+                                . htmlspecialchars($link['text']) . 
+                            "</span>
+                            <div class='absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-" . ($selected_colors["primary"] ?? 'blue') . "-400 to-" . ($selected_colors["primary"] ?? 'blue') . "-600 rounded-full transition-all duration-300 group-hover:w-full'></div>
+                         </a>";
                 }
+            }
+        }   
+    }
 
-                echo "</div>
+echo "</div>
             </div>
-
 <!-- Footer Note -->
-<div class='text-center mb-10 max-w-3xl mx-auto'>
-    <p class='text-gray-600 text-sm leading-relaxed'>" . 
-    // Get and display the footer note from the database
-    (!empty($page['footer_note']) ? htmlspecialchars($page['footer_note']) : 'dwadawdawdwadaw') . 
-    "</p>
+<div class='text-center mb-1 max-w-md mx-auto'>
+    <div class='p-1 rounded-md border border-white border-opacity-20 relative overflow-hidden' 
+         style='background-color: " . ($footer_data['background_color'] ?? '{$selected_colors["light"]}') . "; 
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);'>
+        <!-- Decorative Corner Elements -->
+        <div class='absolute top-0 left-0 w-2 h-2 border-l border-t border-white border-opacity-30'></div>
+        <div class='absolute top-0 right-0 w-2 h-2 border-r border-t border-white border-opacity-30'></div>
+        <div class='absolute bottom-0 left-0 w-2 h-2 border-l border-b border-white border-opacity-30'></div>
+        <div class='absolute bottom-0 right-0 w-2 h-2 border-r border-b border-white border-opacity-30'></div>
+        
+        <!-- Content Container -->
+        <div class='px-2 py-1 relative z-10'>
+            <span class='inline-block text-white opacity-50 text-[10px] mr-1'>✧</span>
+            <p style='color: white; font-size: 16px;' class='inline leading-normal'>" . 
+            ($footer_data && !empty($footer_data['footer_note']) ? 
+                htmlspecialchars($footer_data['footer_note']) : 
+                'Note') . 
+            "</p>
+            <span class='inline-block text-white opacity-50 text-[10px] ml-1'>✧</span>
+        </div>
+    </div>
 </div>
 
             <!-- Divider -->
-            <div class='w-full h-px bg-opacity-20 mb-8' style='background-color: {$selected_colors['primary']}'></div>
+            <div class='w-full h-px bg-opacity-20 mb-8' style='background-color: " . ($footer_data['background_color'] ?? '{$selected_colors["primary"]}') . "'></div>
 
-            <!-- Copyright -->
-            <div class='text-center'>
-                <p class='text-sm' style='color: {$selected_colors['primary']}'>" . 
-                (!empty($page['copyright_text']) ? htmlspecialchars($page['copyright_text']) : htmlspecialchars($translations['copyright'])) . 
-                "</p>
-            </div>
+<!-- Copyright -->
+<div class='text-center'>
+    <div class='inline-flex items-center justify-center gap-3 px-6 py-3 rounded-full border border-white border-opacity-20 hover:border-opacity-40 transition-all duration-300'>
+        <span class='text-white opacity-70 text-lg'>©</span>
+        <p class='text-white text-base font-light tracking-wider hover:transform hover:scale-105 transition-all duration-300'>" . 
+        ($footer_data && !empty($footer_data['copyright_text']) ? 
+            htmlspecialchars($footer_data['copyright_text']) : 
+            htmlspecialchars($translations['copyright'])) . 
+        "</p>
+        <span class='text-white opacity-70 text-lg'>❋</span>
+    </div>
+</div>
         </div>
     </div>
 
     <!-- Bottom Wave Decoration -->
     <div class='w-full overflow-hidden'>
-        <svg data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none' style='fill: {$selected_colors['light']}'>
+        <svg data-name='Layer 1' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120' preserveAspectRatio='none' style='fill: " . ($footer_data['background_color'] ?? '{$selected_colors["light"]}') . "'>
             <path d='M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z'></path>
         </svg>
     </div>
@@ -1827,8 +1862,14 @@ echo "
     .footer a {
         transition: all 0.3s ease;
     }
-</style>
+.footer-background {
+    background-color: " . ($footer_data['background_color'] ?? '{$selected_colors["light"]}') . ";
+}
 
+.Top-footer {
+    fill: " . ($footer_data['background_color'] ?? '{$selected_colors["light"]}') . ";
+}
+</style>
 <script>
 let shareData = {};
 

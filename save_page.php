@@ -13,23 +13,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $text_direction = $conn->real_escape_string($_POST['text_direction']);
     $language_id = isset($_POST['language_id']) ? intval($_POST['language_id']) : null;
 
-    $footer_links = [];
-if (isset($_POST['footer_links'])) {
-    foreach ($_POST['footer_links'] as $link) {
-        if (!empty($link['text']) && !empty($link['url'])) {
-            $footer_links[] = [
-                'text' => htmlspecialchars($link['text']),
-                'url' => htmlspecialchars($link['url'])
-            ];
-        }
+
+    // Instead, get the footer_id from POST
+$footer_id = isset($_POST['footer_id']) ? intval($_POST['footer_id']) : null;
+// If no footer is selected, use the default one
+if (!$footer_id) {
+    $footer_result = $conn->query("SELECT id FROM footers WHERE is_default = 1 LIMIT 1");
+    if ($footer = $footer_result->fetch_assoc()) {
+        $footer_id = $footer['id'];
     }
 }
-$footer_links_json = $conn->real_escape_string(json_encode($footer_links));
-$footer_note = $conn->real_escape_string($_POST['footer_note'] ?? '');
 
-// Process copyright text
-$copyright_text = $conn->real_escape_string($_POST['copyright_text'] ?? '');
-
+// Get default footer id
+$default_footer_id = null;
+$footer_result = $conn->query("SELECT id FROM footers WHERE is_default = 1 LIMIT 1");
+if ($footer = $footer_result->fetch_assoc()) {
+    $default_footer_id = $footer['id'];
+}
 
 
 // Clean and preserve HTML formatting for blog content
@@ -37,6 +37,7 @@ $allowedTags = [
     'div', 'span', 'p', 'br', 'strong', 'em', 'u', 'strike', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
     'ul', 'ol', 'li', 'blockquote'
 ];
+
 $allowedTagsStr = '<' . implode('><', $allowedTags) . '>';
 $blog = strip_tags($_POST['blog'], $allowedTagsStr);
 
@@ -96,31 +97,32 @@ $blog = preg_replace_callback(
     $theme_color = $conn->real_escape_string($_POST['theme_color'] ?? 'blue');
     $custom_color = $conn->real_escape_string($_POST['custom_color'] ?? null);
     
-    $sql = "INSERT INTO pages (route, rating, votes, header, description, blog, store_name, 
+// Update the INSERT query to use footer_id instead of footer fields
+$sql = "INSERT INTO pages (route, rating, votes, header, description, blog, store_name, 
     default_coupon_url, text_direction, theme, theme_color, custom_color, language_id, 
-    footer_links, footer_note, copyright_text"
-    . ($logo ? ", logo" : "") . ") 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
+    footer_id" . ($logo ? ", logo" : "") . ") 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?"
     . ($logo ? ", ?" : "") . ")";
+
     
     $stmt = $conn->prepare($sql);
 
-    $types = "siissssssssissss"; // Note: Added 's' for footer_note
-    if ($logo) {
-        $types .= "s";
-    }
+// Update bind_param types string
+$types = "siissssssssisi"; // 14 parameters without logo
+if ($logo) {
+    $types .= "s";
+}
 
-    if ($logo) {
-        $stmt->bind_param($types, $route, $rating, $votes, $header, $description, $blog, 
-                          $store_name, $default_coupon_url, $text_direction, $theme, 
-                          $theme_color, $custom_color, $language_id, $footer_links_json, 
-                          $footer_note, $copyright_text, $logo);
-    } else {
-        $stmt->bind_param($types, $route, $rating, $votes, $header, $description, $blog,
-                          $store_name, $default_coupon_url, $text_direction, $theme,
-                          $theme_color, $custom_color, $language_id, $footer_links_json,
-                          $footer_note, $copyright_text);
-    }
+if ($logo) {
+    $stmt->bind_param($types, $route, $rating, $votes, $header, $description, $blog, 
+                      $store_name, $default_coupon_url, $text_direction, $theme, 
+                      $theme_color, $custom_color, $language_id, $footer_id, $logo);
+} else {
+    $stmt->bind_param($types, $route, $rating, $votes, $header, $description, $blog,
+                      $store_name, $default_coupon_url, $text_direction, $theme,
+                      $theme_color, $custom_color, $language_id, $footer_id);
+}
+
     
     
     if ($stmt->execute()) {

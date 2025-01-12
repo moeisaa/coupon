@@ -579,112 +579,21 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Footer Settings Section -->
 <div class="section-title mt-4">Footer Settings</div>
 
-<!-- Footer Links -->
 <div class="form-group">
-    <label for="footer_links">Footer Links:</label>
-    <div id="footer-links-container">
+    <label for="footer_id">Select Footer:</label>
+    <select id="footer_id" name="footer_id" class="form-control">
+        <option value="">Choose a footer</option>
         <?php
-        // Fix JSON decoding by properly handling backslashes and escaped characters
-        $footer_links = [];
-        if (!empty($page['footer_links'])) {
-            $footer_links_json = stripslashes($page['footer_links']); // Remove extra backslashes
-            $footer_links_json = str_replace('\\/', '/', $footer_links_json); // Fix forward slashes
-            $decoded_links = json_decode($footer_links_json, true);
-            $footer_links = is_array($decoded_links) ? $decoded_links : [['text' => '', 'url' => '']];
-        } else {
-            $footer_links = [['text' => '', 'url' => '']];
-        }
-
-        foreach ($footer_links as $index => $link) {
-            echo "<div class='footer-link-group mb-3'>
-                    <div class='row'>
-                        <div class='col-md-5'>
-                            <input type='text' name='footer_links[{$index}][text]' 
-                                   value='" . htmlspecialchars($link['text'] ?? '') . "' 
-                                   class='form-control mb-2' placeholder='Link Text'>
-                        </div>
-                        <div class='col-md-5'>
-                            <input type='text' name='footer_links[{$index}][url]' 
-                                   value='" . htmlspecialchars($link['url'] ?? '') . "' 
-                                   class='form-control mb-2' placeholder='Link URL'>
-                        </div>
-                        <div class='col-md-2'>
-                            <button type='button' class='btn btn-danger remove-link'" . ($index === 0 ? " style='display: none;'" : "") . ">
-                                <i class='fas fa-trash'></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>";
+        $footer_query = "SELECT id, name, is_default FROM footers ORDER BY is_default DESC, name ASC";
+        $footer_result = $conn->query($footer_query);
+        while ($footer = $footer_result->fetch_assoc()) {
+            $selected = ($footer['id'] == $page['footer_id']) ? 'selected' : '';
+            $default_tag = $footer['is_default'] ? ' (Default)' : '';
+            echo "<option value='{$footer['id']}' {$selected}>{$footer['name']}{$default_tag}</option>";
         }
         ?>
-    </div>
-    <button type="button" class="btn btn-secondary mt-2" id="add-footer-link">
-        <i class="fas fa-plus me-2"></i>Add Footer Link
-    </button>
+    </select>
 </div>
-
-<!-- Footer Note -->
-<div class="form-group">
-    <label for="footer_note">Footer Note:</label>
-    <textarea id="footer_note" name="footer_note" class="form-control" rows="3"><?php echo htmlspecialchars($page['footer_note'] ?? ''); ?></textarea>
-</div>
-
-<!-- Copyright Text -->
-<div class="form-group">
-    <label for="copyright_text">Copyright Text:</label>
-    <input type="text" id="copyright_text" name="copyright_text" 
-           value="<?php echo htmlspecialchars($page['copyright_text'] ?? ''); ?>" 
-           placeholder="Enter copyright text" class="form-control">
-</div>
-
-<!-- Add the necessary JavaScript for footer links -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('footer-links-container');
-    const addButton = document.getElementById('add-footer-link');
-    let linkCount = <?php echo count($footer_links); ?>;
-
-    addButton.addEventListener('click', function() {
-        const newGroup = document.createElement('div');
-        newGroup.className = 'footer-link-group mb-3';
-        newGroup.innerHTML = `
-            <div class="row">
-                <div class="col-md-5">
-                    <input type="text" name="footer_links[${linkCount}][text]" class="form-control mb-2" placeholder="Link Text">
-                </div>
-                <div class="col-md-5">
-                    <input type="text" name="footer_links[${linkCount}][url]" class="form-control mb-2" placeholder="Link URL">
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger remove-link">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        container.appendChild(newGroup);
-        linkCount++;
-
-        // Show all remove buttons when there's more than one link
-        const removeButtons = document.querySelectorAll('.remove-link');
-        removeButtons.forEach(button => button.style.display = 'block');
-    });
-
-    container.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-link')) {
-            const group = e.target.closest('.footer-link-group');
-            group.remove();
-
-            // Hide the remove button if only one link remains
-            const removeButtons = document.querySelectorAll('.remove-link');
-            if (removeButtons.length === 1) {
-                removeButtons[0].style.display = 'none';
-            }
-        }
-    });
-});
-</script>
 
                 <div class="text-center mt-4">
                     <button type="submit" class="submit-btn">

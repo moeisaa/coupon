@@ -50,23 +50,16 @@ $blog = preg_replace_callback(
 
 
 
+// Get footer_id from form
+$footer_id = isset($_POST['footer_id']) ? intval($_POST['footer_id']) : null;
 
-// Process footer links
-$footer_links = [];
-if (isset($_POST['footer_links'])) {
-    foreach ($_POST['footer_links'] as $link) {
-        if (!empty($link['text']) && !empty($link['url'])) {
-            $footer_links[] = [
-                'text' => strip_tags($link['text']),
-                'url' => strip_tags($link['url'])
-            ];
-        }
+// If no footer is selected, try to get the default one
+if (!$footer_id) {
+    $footer_result = $conn->query("SELECT id FROM footers WHERE is_default = 1 LIMIT 1");
+    if ($footer = $footer_result->fetch_assoc()) {
+        $footer_id = $footer['id'];
     }
 }
-$footer_links_json = $conn->real_escape_string(json_encode($footer_links));
-$footer_note = $conn->real_escape_string($_POST['footer_note'] ?? '');
-$copyright_text = $conn->real_escape_string($_POST['copyright_text'] ?? '');
-
 
 
 
@@ -126,9 +119,7 @@ $sql = "UPDATE pages SET
     theme_color = ?,
     custom_color = ?,
     language_id = ?,
-    footer_links = ?,
-    footer_note = ?,
-    copyright_text = ?
+    footer_id = ?
 WHERE id = ?";
 
 $stmt = $conn->prepare($sql);
@@ -136,11 +127,12 @@ if (!$stmt) {
     die("Error preparing statement: " . $conn->error);
 }
 
-if(!$stmt->bind_param('siissssssssssisssi', 
-$route, $rating, $votes, $header, $description, $blog, 
-$logo, $store_name, $default_coupon_url, $text_direction,
-$theme, $theme_color, $custom_color, $language_id, 
-$footer_links_json, $footer_note, $copyright_text, $id)) {
+
+if(!$stmt->bind_param('siissssssssssiii', 
+    $route, $rating, $votes, $header, $description, $blog, 
+    $logo, $store_name, $default_coupon_url, $text_direction,
+    $theme, $theme_color, $custom_color, $language_id, 
+    $footer_id, $id)) {
     die("Error binding parameters: " . $stmt->error);
 }
 
@@ -172,7 +164,6 @@ if ($stmt->execute()) {
 
         // Write HTML content to a file
         file_put_contents("static_pages/$route.html", $html_content);
-
         echo '<!DOCTYPE html>
         <html lang="en">
         <head>

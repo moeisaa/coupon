@@ -1,4 +1,5 @@
 <?php
+
 // Include database connection
 include('db_connect.php');
 
@@ -7,6 +8,54 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
+
+// Read and parse .env file
+$env = parse_ini_file(__DIR__ . '/.env');
+
+//  Footer 
+// Handle footer creation/update
+if (isset($_POST['save_footer'])) {
+    $name = $conn->real_escape_string($_POST['footer_name']);
+    $footer_links = json_encode($_POST['footer_links']);
+    $footer_note = $conn->real_escape_string($_POST['footer_note']);
+    $copyright_text = $conn->real_escape_string($_POST['copyright_text']);
+    $is_default = isset($_POST['is_default']) ? 1 : 0;
+    
+    if ($is_default) {
+        // Reset all other footers to non-default
+        $conn->query("UPDATE footers SET is_default = 0");
+    }
+    
+    if (isset($_POST['footer_id'])) {
+        // Update existing footer
+        $id = intval($_POST['footer_id']);
+        $sql = "UPDATE footers SET 
+                name = ?, 
+                footer_links = ?,
+                footer_note = ?,
+                copyright_text = ?,
+                is_default = ?
+                WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssii", $name, $footer_links, $footer_note, $copyright_text, $is_default, $id);
+    } else {
+        // Create new footer
+        $sql = "INSERT INTO footers (name, footer_links, footer_note, copyright_text, is_default) 
+                VALUES (?, ?, ?, ?, ?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ssssi", $name, $footer_links, $footer_note, $copyright_text, $is_default);
+    }
+    
+    $stmt->execute();
+    header('Location: settings.php?success=1');
+    exit();
+}
+
+// Get all footers
+$footers = $conn->query("SELECT * FROM footers ORDER BY is_default DESC, name ASC");
+
+
+
 
 // Add default settings handler
 if (isset($_POST['add_default_settings'])) {
@@ -250,7 +299,138 @@ while ($row = $result->fetch_assoc()) {
                 </button>
             </form>
         </div>
+
+
+
+            <!-- Footer Mangement -->
+<div class="settings-card">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Footer Management</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#footerModal">
+            <i class="fas fa-plus"></i> New Footer
+        </button>
     </div>
+    
+    <div class="table-responsive">
+    <table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Background Color</th>
+            <th>Default</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php while ($footer = $footers->fetch_assoc()): ?>
+        <tr>
+            <td><?php echo htmlspecialchars($footer['name']); ?></td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <div class="color-preview me-2" 
+                         style="width: 20px; height: 20px; border: 1px solid #ccc; 
+                                background-color: <?php echo htmlspecialchars($footer['background_color'] ?? '#FFFFFF'); ?>">
+                    </div>
+                    <?php echo htmlspecialchars($footer['background_color'] ?? '#FFFFFF'); ?>
+                </div>
+            </td>
+            <td>
+                <?php if ($footer['is_default']): ?>
+                    <span class="badge bg-success">Default</span>
+                <?php endif; ?>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-primary edit-footer" 
+                        data-footer='<?php echo htmlspecialchars(json_encode($footer)); ?>'>
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-danger delete-footer" 
+                        data-id="<?php echo $footer['id']; ?>">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    </tbody>
+</table>
+    </div>
+</div>
+
+    </div>
+
+
+
+<!-- Footer Modal -->
+<div class="modal fade" id="footerModal" tabindex="-1" aria-labelledby="footerModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+        <form id="footerForm" method="POST" action="services/save_footer.php">
+        <script>
+        const footerModal = document.getElementById('footerModal');
+        footerModal.addEventListener('hidden.bs.modal', function (event) {
+            resetFooterForm();
+        });
+    </script>
+<div class="modal-header">
+                    <h5 class="modal-title">Footer Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+    <input type="hidden" name="footer_id" id="footer_id">
+    
+    <div class="mb-3">
+        <label class="form-label">Footer Name</label>
+        <input type="text" class="form-control" name="footer_name" required>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Background Color</label>
+        <div class="input-group">
+            <input type="color" class="form-control form-control-color" 
+                   name="background_color" id="background_color" 
+                   title="Choose background color" value="#FFFFFF">
+            <input type="text" class="form-control" id="background_color_text" 
+                   placeholder="#FFFFFF" pattern="^#[0-9A-Fa-f]{6}$">
+        </div>
+        <small class="form-text text-muted">Choose a background color for the footer</small>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Footer Links</label>
+        <div id="footer-links-container">
+            <!-- Footer links content remains the same -->
+        </div>
+        <button type="button" class="btn btn-secondary mt-2" id="add-footer-link">
+            <i class="fas fa-plus"></i> Add Link
+        </button>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Footer Note</label>
+        <textarea class="form-control" name="footer_note" rows="3"></textarea>
+    </div>
+    
+    <div class="mb-3">
+        <label class="form-label">Copyright Text</label>
+        <input type="text" class="form-control" name="copyright_text">
+    </div>
+    
+    <div class="mb-3">
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" name="is_default" id="is_default">
+            <label class="form-check-label" for="is_default">Set as Default Footer</label>
+        </div>
+    </div>
+</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" name="save_footer" class="btn btn-primary">Save Footer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -270,5 +450,147 @@ while ($row = $result->fetch_assoc()) {
             });
         });
     </script>
+
+
+<script>
+function resetFooterForm() {
+    // Reset the form fields
+    document.getElementById('footer_id').value = '';
+    document.querySelector('[name="footer_name"]').value = '';
+    document.querySelector('[name="footer_note"]').value = '';
+    document.querySelector('[name="copyright_text"]').value = '';
+    document.querySelector('[name="background_color"]').value = '#FFFFFF';
+    document.getElementById('background_color_text').value = '#FFFFFF';
+    document.getElementById('is_default').checked = false;
+    
+    // Clear existing links
+    const linksContainer = document.getElementById('footer-links-container');
+    linksContainer.innerHTML = '';
+    
+    // Add 3 default links with example URLs
+    const defaultLinks = [
+    { text: 'Terms and Conditions', url: '<?php echo $env['DOMAIN']; ?>/info/terms' },
+    { text: 'Privacy Policy', url: '<?php echo $env['DOMAIN']; ?>/info/privacy' },
+    { text: 'Contact Us', url: '<?php echo $env['DOMAIN']; ?>/info/contact' }
+];
+    
+    // Add the default links
+    defaultLinks.forEach(link => {
+        addFooterLinkGroup(link.text, link.url);
+    });
+}
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Sync color input and text input
+    const colorPicker = document.getElementById('background_color');
+    const colorText = document.getElementById('background_color_text');
+
+    colorPicker.addEventListener('input', function(e) {
+        colorText.value = e.target.value.toUpperCase();
+    });
+
+    colorText.addEventListener('input', function(e) {
+        if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+            colorPicker.value = e.target.value;
+        }
+    });
+    document.querySelector('[data-bs-target="#footerModal"]').addEventListener('click', function() {
+        resetFooterForm();
+});
+
+// Edit footer
+document.querySelectorAll('.edit-footer').forEach(btn => {
+    btn.addEventListener('click', function() {
+            const footer = JSON.parse(this.dataset.footer);
+            const modal = new bootstrap.Modal(document.getElementById('footerModal'));
+            
+            document.getElementById('footer_id').value = footer.id;
+            document.querySelector('[name="footer_name"]').value = footer.name;
+            document.querySelector('[name="footer_note"]').value = footer.footer_note;
+            document.querySelector('[name="copyright_text"]').value = footer.copyright_text;
+            document.getElementById('is_default').checked = footer.is_default == 1;
+            document.querySelector('[name="background_color"]').value = footer.background_color || '#FFFFFF';
+            document.getElementById('background_color_text').value = footer.background_color || '#FFFFFF';
+            
+            // Clear existing links first
+            const linksContainer = document.getElementById('footer-links-container');
+            linksContainer.innerHTML = '';
+            
+            // Add footer links if they exist
+            const links = JSON.parse(footer.footer_links || '[]');
+            if (links.length > 0) {
+                links.forEach(link => {
+                    addFooterLinkGroup(link.text, link.url);
+                });
+            } else {
+                // If no links, add one empty link group
+                addFooterLinkGroup();
+            }
+            
+            modal.show();
+        });
+    });
+});
+
+// Delete footer
+document.querySelectorAll('.delete-footer').forEach(btn => {
+    btn.addEventListener('click', function() {
+        if (confirm('Are you sure you want to delete this footer?')) {
+            const id = this.dataset.id;
+            fetch(`services/delete_footer.php?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error deleting footer');
+                    }
+                });
+        }
+    });
+});
+
+function addFooterLinkGroup(text = '', url = '') {
+    const container = document.getElementById('footer-links-container');
+    const index = container.children.length;
+    
+    const group = document.createElement('div');
+    group.className = 'footer-link-group mb-2';
+    group.innerHTML = `
+        <div class="row">
+            <div class="col-5">
+                <input type="text" name="footer_links[${index}][text]" 
+                       class="form-control" placeholder="Link Text" value="${text}">
+            </div>
+            <div class="col-5">
+                <input type="text" name="footer_links[${index}][url]" 
+                       class="form-control" placeholder="Link URL" value="${url}">
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-danger remove-link">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(group);
+}
+
+document.getElementById('add-footer-link').addEventListener('click', () => {
+    addFooterLinkGroup();
+});
+
+document.getElementById('footer-links-container').addEventListener('click', function(e) {
+    if (e.target.closest('.remove-link')) {
+        e.target.closest('.footer-link-group').remove();
+    }
+});
+// Update in your existing edit-footer event listener
+document.querySelector('[name="background_color"]').value = footer.background_color || '#FFFFFF';
+document.getElementById('background_color_text').value = footer.background_color || '#FFFFFF';
+</script>
 </body>
 </html>
